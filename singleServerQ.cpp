@@ -2,12 +2,18 @@
 #include <iomanip>
 #include <queue>
 
-#define MAXBUFFER = 100000
-#define ARRIVAL = 0
-#define DEPARTURE = 1
+#define MAXBUFFER 100000
+#define ARRIVAL 0
+#define DEPARTURE 1
 
 using namespace std;
+// Global Event list: Implemented as a double linked list
+struct GEL {
+        int event;
+        struct GEL* next;
+        struct GEL* prev;
 
+};
 
 class Event {
     
@@ -17,13 +23,8 @@ class Event {
 
 };
 
-// Implement as a double linked list
-struct GlobalEventList {
 
-        void insert();
-        void remove();
 
-};
 
 struct Packet {
 
