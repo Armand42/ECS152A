@@ -80,7 +80,7 @@ bool GEL::insertEvent(Event *newEvent)
         return SUCCESS;
     }
     Event *index = tail;
-    while ((index != NULL) || (index->eventTime > newEvent->eventTime))
+    while ((index != NULL) && (index->eventTime > newEvent->eventTime))
     {
         index = index->prev;
     }
