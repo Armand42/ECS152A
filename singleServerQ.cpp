@@ -122,8 +122,14 @@ FIFOQueue::FIFOQueue()
 
 bool FIFOQueue::insertPacket(Packet *newPacket)
 {
-    back->next = newPacket;
-    back = newPacket;
+    // first packet in the list
+    if(front == NULL && back == NULL)
+        front = back = newPacket;
+    // other packets
+    else{
+        back->next = newPacket;
+        back = newPacket;
+    }
     length++;
     return SUCCESS;
 }
@@ -162,22 +168,25 @@ int main()
     double arrivalRate = 0.1; //lamda
     //Data Structure
     GEL gel = GEL();
-    
+    Packet packet = {negativeExponentiallyDistributedTime(serviceRate), NULL};
+
     FIFOQueue queue = FIFOQueue();
+    queue.insertPacket(&packet);
     Event event = {negativeExponentiallyDistributedTime(arrivalRate) + currentTime, ARRIVAL, NULL, NULL};
 
     gel.insertEvent(&event);
-
+    
     for (int i = 0; i < 100000; i++) {
         Event *currentEvent = gel.removeFirstEvent();
         intervalTime = currentEvent->eventTime - currentTime;
         currentTime = currentEvent->eventTime;
-        
+       
         if (currentEvent->eventType == ARRIVAL) {
             // Generating the next arrival
             Event newArrival = {negativeExponentiallyDistributedTime(arrivalRate) + currentTime, ARRIVAL, NULL, NULL};
             gel.insertEvent(&newArrival);
             Packet packet = {negativeExponentiallyDistributedTime(serviceRate), NULL};
+           
             // Processing the Arrival Event
             if (queue.length == 0) 
             {
@@ -193,7 +202,7 @@ int main()
                 else 
                 {
                     queue.insertPacket(&packet);
-                    queue.length++;
+                   
                 }
                 totalNumberOfPackets += intervalTime * queue.length;
                 serverBusyTime+= intervalTime;
@@ -208,16 +217,18 @@ int main()
                 int serviceTime = departurePacket->serviceTime;
                 Event departureEvent = {currentTime + serviceTime, DEPARTURE, NULL, NULL};
                 gel.insertEvent(&departureEvent);
-                queue.length--;
+                
                 totalNumberOfPackets += intervalTime * queue.length;
                 serverBusyTime+= intervalTime;
             }
         }
        
     }
-    printf("Utilization: %f \nMean Queue Length: %f \nNumber of Packets Dropped: %d ", ((double)serverBusyTime)/currentTime, ((double)totalNumberOfPackets)/currentTime, droppedPackets);
+    cout << "STATISTICS\n";
+    cout << endl;
+    printf("Utilization: %f \nMean Queue Length: %f \nNumber of Packets Dropped: %d \n", ((double)serverBusyTime)/currentTime, ((double)totalNumberOfPackets)/currentTime, droppedPackets);
+    cout << "Queue Length: " << queue.length << endl;
     
-
 
     return 0;
 }
