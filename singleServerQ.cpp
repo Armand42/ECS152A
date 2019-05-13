@@ -235,7 +235,6 @@ int main()
             }
         }
         
-        cout << "ARRIVAL RATE: " << arrivalRate << "\t";
         printf("Utilization: %f \tMean Queue Length: %f \tNumber of Packets Dropped: %f \n", ((double)serverBusyTime) / currentTime, ((double)totalNumberOfPackets) / currentTime, droppedPackets);
     }
 
