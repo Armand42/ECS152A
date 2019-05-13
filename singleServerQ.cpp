@@ -8,7 +8,7 @@
 #include <queue>
 #include <math.h>
 
-#define MAXBUFFER 2
+#define MAXBUFFER 30
 #define ARRIVAL 0
 #define DEPARTURE 1
 #define SUCCESS true
@@ -25,14 +25,14 @@ struct Event
     Event *prev;
 };
 
-// Global Event list: Implemented as a double linked list
+// Global Event list: Implemented as a double nexted list
 class GEL
 {
   public:
     Event *head;
     Event *tail;
     GEL();
-    bool insertEvent(Event *newEvent);
+    bool insertEvent(Event **newEvent);
     Event *removeFirstEvent();
     void printGEL();
     bool isTransmittingPacket();
@@ -50,37 +50,37 @@ GEL::GEL()
     head = tail = NULL;
 }
 
-// Insert an event at the proper location of the linked list
-bool GEL::insertEvent(Event *newEvent)
+// Insert an event at the proper location of the nexted list
+bool GEL::insertEvent(Event **newEvent)
 {
-    if (head == NULL && tail == NULL)
+   if (head == NULL && tail == NULL)
     {
-        head = tail = newEvent;
+        head = tail = *newEvent;
         return SUCCESS;
     }
     Event *index = head;
-    while (index != NULL && index->eventTime < newEvent->eventTime)
+    while (index != NULL && index->eventTime < (*newEvent)->eventTime)
     {
         index = index->next;
     }
     if (index == head)
     {
-        newEvent->next = head;
-        head->prev = newEvent;
-        head = newEvent;
+        (*newEvent)->next = head;
+        head->prev = *newEvent;
+        head =  *newEvent;
     }
     else if (index == NULL)
     {
-        newEvent->prev = tail;
-        tail->next = newEvent;
-        tail = newEvent;
+        (*newEvent)->prev = tail;
+        tail->next =  *newEvent;
+        tail = *newEvent;
     }
     else
     {
-        newEvent->next = index;
-        newEvent->prev = index->prev;
-        index->prev->next = newEvent;
-        index->prev = newEvent;
+        (*newEvent)->next = index;
+        (*newEvent)->prev = index->prev;
+        index->prev->next =  *newEvent;
+        index->prev = *newEvent;
     }
 
     return SUCCESS;
@@ -165,7 +165,11 @@ int main()
 
         //Data Structure Init
         GEL gel = GEL();
-        Event event = {negativeExponentiallyDistributedTime(arrivalRate) + currentTime, ARRIVAL, NULL, NULL};
+        Event *event = new Event;
+        event->eventTime = negativeExponentiallyDistributedTime(arrivalRate) + currentTime;
+        event->eventType = ARRIVAL;
+        event->next = event->prev = NULL;
+    
         gel.insertEvent(&event);
 
         for (int i = 0; i < 100000; i++)
@@ -178,21 +182,28 @@ int main()
                 // Generating the next arrival
                 double arrival = negativeExponentiallyDistributedTime(arrivalRate), departure = negativeExponentiallyDistributedTime(serviceRate);
 
-                Event newArrival = {arrival + currentTime, ARRIVAL, NULL, NULL};
+                Event *newArrival = new Event;
+                newArrival->eventTime = arrival + currentTime;
+                newArrival->eventType = ARRIVAL;
+                newArrival->next = newArrival->prev = NULL;
                 gel.insertEvent(&newArrival);
                 Packet packet = {departure, NULL};
 
                 // Processing the Arrival Event
+                //if server is free
                 if (!gel.isTransmittingPacket())
                 {
                     double serviceTime = packet.serviceTime;
-                    Event departureEvent = {(currentTime + serviceTime), DEPARTURE, NULL, NULL};
+
+                    Event *departureEvent = new Event;
+                    departureEvent->eventTime = currentTime + serviceTime;
+                    departureEvent->eventType = DEPARTURE;
+                    departureEvent->next = departureEvent->prev = NULL;
                     gel.insertEvent(&departureEvent);
                 }
                 else
                 {
-
-                    if (MAXBUFFER != -1 && queue.size() >= MAXBUFFER)
+                    if (MAXBUFFER != -1 && (queue.size() >= MAXBUFFER))
                     {
                         droppedPackets++;
                     }
@@ -200,34 +211,32 @@ int main()
                     {
                         queue.push(&packet);
                     }
-                    totalNumberOfPackets += intervalTime * queue.size();
+                    totalNumberOfPackets += intervalTime * (queue.size() + 1);
                     serverBusyTime += intervalTime;
                 }
             }
             // Processing the Departure Event
             else
             {
-                if (queue.size() != 0)
+                totalNumberOfPackets += intervalTime * (queue.size() + 1);
+                serverBusyTime += intervalTime;
+                if (queue.size() > 0)
                 {
                     Packet *departurePacket = queue.front();
                     queue.pop();
                     double serviceTime = departurePacket->serviceTime;
 
-                    Event departureEvent = {currentTime + serviceTime, DEPARTURE, NULL, NULL};
+                    Event *departureEvent = new Event;
+                    departureEvent->eventTime = currentTime + serviceTime;
+                    departureEvent->eventType = DEPARTURE;
+                    departureEvent->next = departureEvent->prev = NULL;
                     gel.insertEvent(&departureEvent);
-
-                    totalNumberOfPackets += intervalTime * queue.size();
-                    serverBusyTime += intervalTime;
                 }
             }
-            //printQueue(queue);
         }
         
         cout << "ARRIVAL RATE: " << arrivalRate << "\t";
         printf("Utilization: %f \tMean Queue Length: %f \tNumber of Packets Dropped: %f \n", ((double)serverBusyTime) / currentTime, ((double)totalNumberOfPackets) / currentTime, droppedPackets);
-        //cout << "TOTAL NUMBER OF PACKETS: " << totalNumberOfPackets << endl;
-        //cout << endl;
-        //cout << "TOTAL NUMBER OF PACKETS: " << totalNumberOfPackets << endl;
     }
 
     return 0;
