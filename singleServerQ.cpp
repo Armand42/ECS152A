@@ -8,7 +8,7 @@
 #include <queue>
 #include <math.h>
 
-#define MAXBUFFER 30
+#define MAXBUFFER 2
 #define ARRIVAL 0
 #define DEPARTURE 1
 #define SUCCESS true
@@ -192,7 +192,7 @@ int main()
                 else
                 {
 
-                    if (queue.size() >= MAXBUFFER)
+                    if (MAXBUFFER != -1 && queue.size() >= MAXBUFFER)
                     {
                         droppedPackets++;
                     }
