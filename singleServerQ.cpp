@@ -41,7 +41,7 @@ struct Packet
     double serviceTime;
     Packet *next;
 };
-
+/*
 class FIFOQueue
 {
     public:
@@ -55,6 +55,8 @@ class FIFOQueue
     bool isQueueFull();
     void printQueue();
 };
+*/
+
 
 GEL::GEL()
 {
@@ -82,7 +84,7 @@ bool GEL::insertEvent(Event *newEvent)
         return SUCCESS;
     }
     Event *index = head;
-    while(index->eventTime<newEvent->eventTime && index!=NULL)
+    while(index != NULL && index->eventTime < newEvent->eventTime)
     {
         index = index->next;
     }
@@ -153,7 +155,7 @@ bool GEL::isTransmittingPacket()
     return false;
 }
 
-FIFOQueue::FIFOQueue()
+/*FIFOQueue::FIFOQueue()
 {
     front = back = NULL;
     length = 0;
@@ -162,7 +164,7 @@ FIFOQueue::FIFOQueue()
 bool FIFOQueue::insertPacket(Packet *newPacket)
 {
     // first packet in the list
-    if(front == NULL && back == NULL)
+    if(front == NULL)
         front = back = newPacket;
     // other packets
     else{
@@ -198,7 +200,7 @@ void FIFOQueue::printQueue()
 {
     Packet *current = front;
 }
-
+*/
 double negativeExponentiallyDistributedTime(double rate) 
 {
     double u;
@@ -206,14 +208,9 @@ double negativeExponentiallyDistributedTime(double rate)
     return ((-1/rate) * log(1-u));
 }
 
-void reset() 
-{
-
-
-}
-
 int main()
 {
+	queue<Packet*> queue;
     cout << "STATISTICS\n";
     cout << endl;
     double arrivalRates[7] = {0.1, 0.2, 0.4, 0.5, 0.6, 0.8, 0.9};
@@ -228,30 +225,19 @@ int main()
 
         //Data Structure
         GEL gel = GEL();
-        Packet packet = {negativeExponentiallyDistributedTime(serviceRate), NULL};
-
-        FIFOQueue queue = FIFOQueue();
-        //queue.insertPacket(&packet);
         Event event = {negativeExponentiallyDistributedTime(arrivalRate) + currentTime, ARRIVAL, NULL, NULL};
-
         gel.insertEvent(&event);
         
-        for (int i = 0; i < 20; i++) {
-            gel.printGEL();
+        for (int i = 0; i < 100000; i++) {
+          //  gel.printGEL();
 
             Event *currentEvent = gel.removeFirstEvent();
             intervalTime = currentTime - currentEvent->eventTime;
             currentTime = currentEvent->eventTime;
-            if (currentTime < currentEvent->eventTime) {
-            cout << "CURRENT TIME: " << currentTime << endl;
-            cout << "INTERVAL TIME: " << intervalTime << endl;
-            cout << "EVENT TIME: " << currentEvent->eventTime << endl;
-            }
-
             if (currentEvent->eventType == ARRIVAL) {
                 // Generating the next arrival
                 double arrival =negativeExponentiallyDistributedTime(arrivalRate), departure =  negativeExponentiallyDistributedTime(serviceRate);
-                printf("\t\t\t\t\t\t\t\t\t\tarrival: %f \t departure: %f \n", arrival,departure);
+        //        printf("\t\t\t\t\t\t\t\t\t\tarrival: %f \t departure: %f \n", arrival,departure);
                 Event newArrival = { arrival + currentTime, ARRIVAL, NULL, NULL};
                 gel.insertEvent(&newArrival);
                 Packet packet = {departure, NULL};
@@ -260,40 +246,39 @@ int main()
                 if (!gel.isTransmittingPacket()) 
                 {
                     double serviceTime = packet.serviceTime;
-                    // cout<<"packet service time: "<<serviceTime << "\tcurrent time: "<<currentTime <<endl;
                     Event departureEvent = {(currentTime + serviceTime), DEPARTURE, NULL, NULL};
                     gel.insertEvent(&departureEvent);
 
                 }
                 else {
-                    cout<<"INSERT PACKET\n";
-                    if (queue.isQueueFull())  
+           //         cout<<"INSERT PACKET\n";
+                    if (queue.size() >= MAXBUFFER)  
                     {
                         droppedPackets++;  
                     } 
                     else 
                     {
-                        queue.insertPacket(&packet);
+                        queue.push(&packet);
                     
                     }
-                    totalNumberOfPackets += intervalTime * queue.length;
+                    totalNumberOfPackets += intervalTime * queue.size();
                     serverBusyTime+= intervalTime;
                 }
             }
             // else departure event
             else 
             {
-                // cout<<"\nDEPARTURE EVENT PROCESSING" << queue.length;
-                if (queue.length != 0)
+                if (queue.size() != 0)
                 {
-                    Packet *departurePacket = queue.removePacket();
-                    int serviceTime = departurePacket->serviceTime;
-                    Event departureEvent = {currentTime + serviceTime, DEPARTURE, NULL, NULL};
+                    Packet *departurePacket = queue.front();
+		    queue.pop();
+                    double serviceTime = departurePacket->serviceTime;
+                    printf("interval time %f\n", intervalTime);
+		    Event departureEvent = {currentTime + serviceTime, DEPARTURE, NULL, NULL};
                     gel.insertEvent(&departureEvent);
                     
-                    totalNumberOfPackets += intervalTime * queue.length;
+                    totalNumberOfPackets += intervalTime * queue.size();
                     serverBusyTime+= intervalTime;
-                    cout<<"Server busy time: " << serverBusyTime <<endl;
                 }
             }
         
