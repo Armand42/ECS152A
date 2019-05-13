@@ -92,21 +92,21 @@ double negativeExponentiallyDistributedTime(double rate);
 The main logic was implemented akin to the logic given in the lab manual. We wrote a for loop to run each of the `arrivalRates` and we manually changed the `MAXBUFFER` for part 3 of the experiments.
 
 ## **EXPERIMENTS**
-![alt text][infiniteBuffer]
-![alt text][buffer=1]
-![alt text][buffer=20]
-![alt text][buffer=30]
-![alt text][exp2meanQueueLength]
-![alt text][exp2utilization]
 
 ### Experiment 1
+![alt text][infiniteBuffer]
 [infiniteBuffer]:https://github.com/Armand42/ECS152A/blob/master/infinite%20buffer.png
 
 ### Experiment 2 - Infinite Buffer
+![alt text][exp2meanQueueLength]
+![alt text][exp2utilization]
 [exp2meanQueueLength]:https://github.com/Armand42/ECS152A/blob/master/exp2-meanQueueLength.png
 [exp2utilization]:https://github.com/Armand42/ECS152A/blob/master/exp2-serverUtilization.png
 
 ## Experiment 3
+![alt text][buffer=1]
+![alt text][buffer=20]
+![alt text][buffer=30]
 [buffer=1]:https://github.com/Armand42/ECS152A/blob/master/buffer%3D1.png
 [buffer=20]:https://github.com/Armand42/ECS152A/blob/master/buffer%3D20.png
 [buffer=30]:https://github.com/Armand42/ECS152A/blob/master/buffer%3D30.png
