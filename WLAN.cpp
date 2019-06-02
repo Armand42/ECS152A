@@ -182,22 +182,20 @@ struct Packet
     Packet *next;
 };
 
-Packet *acknowledgementPacket(Packet *packet, int host)
+void acknowledgementPacket(Packet **packet, int host)
 {
-    packet->frameSize = ACKPACKETSIZE * 8; // bytes->bits
-    packet->host = host;
-    packet->next = NULL;
-    packet->isAck = true;
-    return packet;
+    (*packet)->frameSize = ACKPACKETSIZE * 8; // bytes->bits
+    (*packet)->host = host;
+    (*packet)->next = NULL;
+    (*packet)->isAck = true;
 }
 
-Packet *packet(Packet *packet, int frameSize, int host)
+void packet(Packet **packet, int frameSize, int host)
 {
-    packet->frameSize = frameSize * 8; // bytes->bits
-    packet->host = host;
-    packet->next = NULL;
-    packet->isAck = false;
-    return packet;
+    (*packet)->frameSize = frameSize * 8; // bytes->bits
+    (*packet)->host = host;
+    (*packet)->next = NULL;
+    (*packet)->isAck = false;
 }
 
 class Host
@@ -310,7 +308,7 @@ int main()
                     destHost = rand() % NUM_HOSTS;
                 } while (destHost != currentEvent->host);
                 Packet *packetReceived = new Packet;
-                packet(packetReceived, frameSize, destHost);
+                packet(&packetReceived, frameSize, destHost);
                 hosts[currentEvent->host].push(packetReceived);
                 hosts[currentEvent->host].backoff = (rand() % T) + 1;
             }
@@ -335,7 +333,7 @@ int main()
                 {
                     // CREATING THE ACKNOWLEDGEMENT
                     Packet *tempAck = new Packet;
-                    acknowledgementPacket(tempAck, currentEvent->host);
+                    acknowledgementPacket(&tempAck, currentEvent->host);
                     hosts[currentEvent->host].pushFront(&tempAck);
 
                     if (hosts[currentEvent->host].backoff < 0)
@@ -366,10 +364,10 @@ int main()
                             {
                                 departureHost = i;
                             }
-                            else if (resetBackOff)
+                            /*else if (resetBackOff)
                             {
                                 hosts[i].backoff = rand() * T * 2;
-                            }
+                            }*/
                             else if (hosts[i].backoff == 0 && departureHost != -1)
                             {
                                 hosts[i].backoff = rand() * T * 2;
