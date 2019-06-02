@@ -12,6 +12,7 @@
 #define MAXPACKETSIZE 1544
 #define ACKPACKETSIZE 64
 #define NUM_HOSTS 10
+#define T 10000
 #define SUCCESS true
 #define FAILURE false
 
@@ -34,11 +35,12 @@ double negativeExponentiallyDistributedTime(double rate)
 // Event Node
 struct Event
 {
-public:
+  public:
     double eventTime;
     //arrival event: host it's arriving at
     //departure event: host it's going to
     //backoff event: host is -1
+    bool isAck;
     int host;
     eventType type;
     Event *next;
@@ -65,7 +67,7 @@ Event *backoffEvent(double currentTime)
     return event;
 }
 
-Event *departureEvent(double serviceTime, double currentTime, int srcHost)
+Event *departureEvent(double serviceTime, double currentTime, int srcHost, bool isAck)
 {
     Event *event;
     event->eventTime = serviceTime + currentTime;
@@ -77,13 +79,14 @@ Event *departureEvent(double serviceTime, double currentTime, int srcHost)
     } while (destHost != srcHost);
     event->host = destHost;
     event->next = event->prev = NULL;
+    event->isAck = isAck;
     return event;
 }
 
 // Global Event list: Implemented as a double nexted list
 class GEL
 {
-public:
+  public:
     Event *head;
     Event *tail;
     GEL();
@@ -165,33 +168,36 @@ void GEL::printGEL()
 
 struct Packet
 {
-public:
+  public:
     int frameSize;
+    bool isAck;
     int host; //where i am sending this packet to
     Packet *next;
 };
 
 Packet *acknowledgementPacket(int host)
 {
-    Packet *packet= new Packet;
+    Packet *packet = new Packet;
     packet->frameSize = ACKPACKETSIZE * 8; // bytes->bits
     packet->host = host;
     packet->next = NULL;
+    packet->isAck = true;
     return packet;
 }
 
 Packet *packet(int frameSize, int host)
 {
-    Packet *packet= new Packet;
+    Packet *packet = new Packet;
     packet->frameSize = frameSize * 8; // bytes->bits
     packet->host = host;
     packet->next = NULL;
+    packet->isAck = false;
     return packet;
 }
 
 class Host
 {
-public:
+  public:
     Packet *head;
     Packet *tail;
     int backoff;
@@ -204,26 +210,41 @@ public:
 Host::Host()
 {
     head = tail = NULL;
-    backoff = 0;
+    backoff = -1;
 }
 
 Packet *Host::pop()
 {
+    if (head == NULL)
+        return NULL;
     Packet *temp = head;
     head = head->next;
+    if (tail == temp)
+        tail = NULL;
     return temp;
 }
 
 void Host::push(Packet *p)
 {
-    tail->next = p;
-    tail = p;
+    if (head == NULL && tail == NULL)
+    {
+        head = tail = p;
+    }
+    else
+    {
+        tail->next = p;
+        tail = p;
+    }
 }
 
 void Host::pushFront(Packet **p)
 {
     (*p)->next = head;
     head = *p;
+    if (tail == NULL)
+    {
+        tail = head;
+    }
 }
 
 int main()
@@ -276,9 +297,7 @@ int main()
                 Event *newArrival = arrivalEvent(arrivalRate, currentTime, currentEvent->host);
                 gel.insertEvent(&newArrival);
                 // Processing the Arrival Event
-                // // CREATING THE ACKNOWLEDGEMENT
-                // Packet *tempAck = acknowledgementPacket(currentEvent->host);
-                // hosts[currentEvent->host].pushFront(&tempAck);
+
                 //adding the newly received packet to the queue!
                 int destHost;
                 do
@@ -292,7 +311,28 @@ int main()
             else if (currentEvent->type == departure)
             {
                 channelBusy = false;
-                
+                if (currentEvent->isAck)
+                {
+                    hosts[currentEvent->host].pop();
+                    if (hosts[currentEvent->host].head == NULL)
+                    {
+                        hosts[currentEvent->host].backoff = -1;
+                    }
+                    else
+                    {
+                        hosts[currentEvent->host].backoff = (rand() % T) + 1;
+                    }
+                }
+                else
+                {
+                    // CREATING THE ACKNOWLEDGEMENT
+                    Packet *tempAck = acknowledgementPacket(currentEvent->host);
+                    hosts[currentEvent->host].pushFront(&tempAck);
+
+                    if (hosts[currentEvent->host].backoff < 0) {
+                        hosts[currentEvent->host].backoff = (rand() % T) + 1;
+                    }
+                }
             }
             else if (currentEvent->type == backoff)
             {
@@ -300,27 +340,32 @@ int main()
                 Event *event = backoffEvent(currentTime);
                 gel.insertEvent(&event);
                 int departureHost = -1;
-                for (int i = 0; i < NUM_HOSTS; i++)
+                if (channelBusy == false)
                 {
-                    hosts[i].backoff--;
-                    //NOTE: under the assumption that two events will not reach 0 at the same time
-                    if (!hosts[i].packetQueue.empty())
+                    for (int i = 0; i < NUM_HOSTS; i++)
                     {
-                        delay += intervalTime; //adding the queue delay time for every host
-                        if (hosts[i].backoff == 0)
+                        hosts[i].backoff--;
+                        //NOTE: under the assumption that two events will not reach 0 at the same time
+                        if (hosts[i].head != NULL && hosts[i].tail != NULL)
                         {
-                            departureHost = i;
+                            delay += intervalTime; //adding the queue delay time for every host
+                            if (hosts[i].backoff == 0)
+                            {
+                                departureHost = i;
+                            }
                         }
                     }
-                }
 
-                if (departureHost != -1)
-                {
-                    //MAKE DEPARTURE EVENT .... YAY
-                    Packet packet = hosts[departureHost].packetQueue.front();
-                    int departureTime = packet.frameSize / channelRate;
-                    Event *event = departureEvent(departureTime, currentTime, departureHost);
-                    gel.insertEvent(&event);
+                    if (departureHost > -1 && departureHost < NUM_HOSTS)
+                    {
+                        //MAKE DEPARTURE EVENT .... YAY
+                        Packet *packet = hosts[departureHost].head;
+                        int departureTime = packet->frameSize / channelRate;
+                        bool isAck = packet->isAck;
+                        Event *event = departureEvent(departureTime, currentTime, departureHost, isAck);
+                        gel.insertEvent(&event);
+                        channelBusy = true;
+                    }
                 }
             }
         }
