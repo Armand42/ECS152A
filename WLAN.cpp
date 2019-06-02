@@ -182,9 +182,8 @@ struct Packet
     Packet *next;
 };
 
-Packet *acknowledgementPacket(int host)
+Packet *acknowledgementPacket(Packet *packet, int host)
 {
-    Packet *packet = new Packet;
     packet->frameSize = ACKPACKETSIZE * 8; // bytes->bits
     packet->host = host;
     packet->next = NULL;
@@ -192,9 +191,8 @@ Packet *acknowledgementPacket(int host)
     return packet;
 }
 
-Packet *packet(int frameSize, int host)
+Packet *packet(Packet *packet, int frameSize, int host)
 {
-    Packet *packet = new Packet;
     packet->frameSize = frameSize * 8; // bytes->bits
     packet->host = host;
     packet->next = NULL;
@@ -311,7 +309,8 @@ int main()
                 {
                     destHost = rand() % NUM_HOSTS;
                 } while (destHost != currentEvent->host);
-                Packet *packetReceived = packet(frameSize, destHost);
+                Packet *packetReceived = new Packet;
+                packet(packetReceived, frameSize, destHost);
                 hosts[currentEvent->host].push(packetReceived);
                 hosts[currentEvent->host].backoff = (rand() % T) + 1;
             }
@@ -335,7 +334,8 @@ int main()
                 else
                 {
                     // CREATING THE ACKNOWLEDGEMENT
-                    Packet *tempAck = acknowledgementPacket(currentEvent->host);
+                    Packet *tempAck = new Packet;
+                    acknowledgementPacket(tempAck, currentEvent->host);
                     hosts[currentEvent->host].pushFront(&tempAck);
 
                     if (hosts[currentEvent->host].backoff < 0)
