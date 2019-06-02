@@ -47,27 +47,27 @@ struct Event
     Event *prev;
 };
 
-Event *arrivalEvent(double arrivalRate, double currentTime, int srcHost)
+Event **arrivalEvent(double arrivalRate, double currentTime, int srcHost)
 {
     Event *event;
     event->eventTime = negativeExponentiallyDistributedTime(arrivalRate) + currentTime;
     event->type = arrival;
     event->host = srcHost;
     event->next = event->prev = NULL;
-    return event;
+    return &event;
 }
 
-Event *backoffEvent(double currentTime)
+Event **backoffEvent(double currentTime)
 {
-    Event *event;
+    Event *event = new Event;
     event->eventTime = 0.1 + currentTime;
     event->type = backoff;
     event->host = -1;
     event->next = event->prev = NULL;
-    return event;
+    return &event;
 }
 
-Event *departureEvent(double serviceTime, double currentTime, int srcHost, bool isAck)
+Event **departureEvent(double serviceTime, double currentTime, int srcHost, bool isAck)
 {
     Event *event;
     event->eventTime = serviceTime + currentTime;
@@ -80,7 +80,7 @@ Event *departureEvent(double serviceTime, double currentTime, int srcHost, bool 
     event->host = destHost;
     event->next = event->prev = NULL;
     event->isAck = isAck;
-    return event;
+    return &event;
 }
 
 // Global Event list: Implemented as a double nexted list
@@ -276,12 +276,12 @@ int main()
         for (int i = 0; i < NUM_HOSTS; i++)
         {
             //CREATE EVENTS FOR THIS
-            Event *event = arrivalEvent(arrivalRate, currentTime, i);
-            gel.insertEvent(&event);
+            Event **event = arrivalEvent(arrivalRate, currentTime, i);
+            gel.insertEvent(event);
         }
 
-        Event *event = backoffEvent(currentTime);
-        gel.insertEvent(&event);
+        Event **event = backoffEvent(currentTime);
+        gel.insertEvent(event);
 
         for (int i = 0; i < 100000; i++)
         {
@@ -294,8 +294,8 @@ int main()
                 double arrivalTime = negativeExponentiallyDistributedTime(arrivalRate);
                 int frameSize = (int)(negativeExponentiallyDistributedTime(serviceRate) * MAXPACKETSIZE) % MAXPACKETSIZE;
 
-                Event *newArrival = arrivalEvent(arrivalRate, currentTime, currentEvent->host);
-                gel.insertEvent(&newArrival);
+                Event **newArrival = arrivalEvent(arrivalRate, currentTime, currentEvent->host);
+                gel.insertEvent(newArrival);
                 // Processing the Arrival Event
 
                 //adding the newly received packet to the queue!
@@ -337,8 +337,8 @@ int main()
             else if (currentEvent->type == backoff)
             {
                 //create a new backoff event
-                Event *event = backoffEvent(currentTime);
-                gel.insertEvent(&event);
+                Event **event = backoffEvent(currentTime);
+                gel.insertEvent(event);
                 int departureHost = -1;
                 if (channelBusy == false)
                 {
@@ -362,8 +362,8 @@ int main()
                         Packet *packet = hosts[departureHost].head;
                         int departureTime = packet->frameSize / channelRate;
                         bool isAck = packet->isAck;
-                        Event *event = departureEvent(departureTime, currentTime, departureHost, isAck);
-                        gel.insertEvent(&event);
+                        Event **event = departureEvent(departureTime, currentTime, departureHost, isAck);
+                        gel.insertEvent(event);
                         channelBusy = true;
                     }
                 }
