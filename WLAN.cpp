@@ -11,8 +11,8 @@
 #define MAXBUFFER 30
 #define MAXPACKETSIZE 1544
 #define ACKPACKETSIZE 64
-#define NUM_HOSTS 10
-#define T 20
+#define NUM_HOSTS 50
+#define T 1000
 #define SUCCESS true
 #define FAILURE false
 #define SIFS .00005
@@ -256,8 +256,9 @@ int main()
 
     queue<Packet *> queue;
     cout << "***STATISTICS***\n";
-    cout << endl;
-    double arrivalRates[7] = {0.1, 0.2, 0.4, 0.5, 0.6, 0.8, 0.9};
+    cout	<< "Num of Hosts: " << NUM_HOSTS << "\t"
+        	<< "T: " << T << endl;
+    double arrivalRates[7] = {0.01, 0.05, 0.1, 0.3, 0.6, 0.8, 0.9};
     for (int i = 0; i < 7; i++)
     {
         int totalBytesTransmitted = 0;
@@ -378,7 +379,7 @@ int main()
                         }
                     }
 
-                    if (resetBackOff==false)
+                    if (resetBackOff==false && departureHost > -1)
                     {
                         //MAKE DEPARTURE EVENT .... YAY
                         Packet *packet = hosts[departureHost].head;
@@ -387,6 +388,11 @@ int main()
                         Event *event = new Event;
 
                         departureEvent(&event, departureTime, currentTime, departureHost, isAck, packet->frameSize / 8);
+                        if(isAck)
+                        	delay += SIFS;
+                        else
+                        	delay += DIFS;
+
                         gel.insertEvent(&event);
                         channelBusy = true;
                     }
@@ -394,9 +400,12 @@ int main()
             }
             // gel.printGEL();
         }
+        double throughput = totalBytesTransmitted / currentTime;
+        double averageDelay = delay / throughput;
+
         cout << "Lambda: " << arrivalRate << "\t"
-             << "Delay: " << delay << "\t"
-             << "Throughput: " << totalBytesTransmitted / (currentTime) << endl;
+            << "Throughput: " << throughput << "\t"
+            << "Delay: " << averageDelay << endl;
     }
     return 0;
 }
