@@ -57,4 +57,6 @@ The average network delay is the total delay (which is the queuing and transmiss
 
 ## **ANALYSIS**
 
-For both experiments, we see a decrease in throughput when λ changes from 0.2 to 0.4. Our theory is that when λ is 0.4, the network starts experiencing backoffs and the throughput is no longer 100%. The graph increases afterwards because λ is higher meaning more frames arriving and a higher throughput.
+The trends for throughput varies with different values of T and number of hosts. In the lower λ values (0.1 and 0.05), there is an upwards trend, our theory is that the network does not have enough arrivals for the backoffs to coincide, meaning the throughput is at 100%. For λ values greater than 0.05, there are places where the throughput actually decreases. Our theory for this phenomena is that the network experiences multiple backoffs trying to transmit at the same time, meaning the frames get new backoff values that are ranged even larger than the initial T value. The new backoff value can become very large and can decrease the throughput for hosts that try to transmit simultaneously.
+
+The average network delay exponentially decreases as the arrival rates increases.  This trend does not vary much even when we change the number of hosts and T.
