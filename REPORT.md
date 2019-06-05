@@ -28,11 +28,32 @@ The average network delay is the total delay (which is the queuing and transmiss
 
 ### Experiment 1: N = 10
 
-![](buffer=20.png)
+
+![](https://github.com/Armand42/ECS152A/blob/project2/pictures/throughputN%3D10T%3D10.png)
+
+![](https://github.com/Armand42/ECS152A/blob/project2/pictures/delayN%3D10T%3D10.png)
+
+![](https://github.com/Armand42/ECS152A/blob/project2/pictures/throughputN%3D10T%3D100.png)
+
+![](https://github.com/Armand42/ECS152A/blob/project2/pictures/delayN%3D10T%3D100.png)
+
+![](https://github.com/Armand42/ECS152A/blob/project2/pictures/throughputN%3D10T%3D1000.png)
+
+![](https://github.com/Armand42/ECS152A/blob/project2/pictures/delayN%3D10T%3D1000.png)
 
 ### Experiment 2: N = 50
 
-![](buffer=1.png)
+![](https://github.com/Armand42/ECS152A/blob/project2/pictures/throughputN%3D50T%3D10.png)
+
+![](https://github.com/Armand42/ECS152A/blob/project2/pictures/delayN%3D50T%3D10.png)
+
+![](https://github.com/Armand42/ECS152A/blob/project2/pictures/throughputN%3D50T%3D100.png)
+
+![](https://github.com/Armand42/ECS152A/blob/project2/pictures/delayN%3D50T%3D100.png)
+
+![](https://github.com/Armand42/ECS152A/blob/project2/pictures/throughputN%3D50T%3D1000.png)
+
+![](https://github.com/Armand42/ECS152A/blob/project2/pictures/delayN%3D50T%3D1000.png)
 
 ## **ANALYSIS**
 
