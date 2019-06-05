@@ -350,6 +350,12 @@ int main()
                 gel.insertEvent(&event);
                 int departureHost = -1;
                 bool resetBackOff = false;
+                //we want to add queue delay time even if the channel is busy
+                for(int i =0;i<NUM_HOSTS;i++)
+                {
+                    if (hosts[i].head != NULL && hosts[i].tail != NULL)
+                            delay += intervalTime; //adding the queue delay time for every host
+                }
                 if (channelBusy == false)
                 {
                     for (int i = 0; i < NUM_HOSTS; i++)
@@ -359,15 +365,10 @@ int main()
                         //NOTE: under the assumption that two events will not reach 0 at the same time
                         if (hosts[i].head != NULL && hosts[i].tail != NULL)
                         {
-                            delay += intervalTime; //adding the queue delay time for every host
                             if (hosts[i].backoff == 0 && departureHost == -1)
                             {
                                 departureHost = i;
                             }
-                            /*else if (resetBackOff)
-                            {
-                                hosts[i].backoff = rand() * T * 2;
-                            }*/
                             else if (hosts[i].backoff == 0 && departureHost != -1)
                             {
                                 hosts[i].backoff = rand() * T * 2;

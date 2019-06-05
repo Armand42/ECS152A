@@ -6,119 +6,34 @@ Armand Nasseri 912679383
 
 Jennifer Nguyen 914995612
 
-## **DATA STRUCTURES**
-
-```c++
-#define ARRIVAL 0
-#define DEPARTURE 1
-
-----------------------
-
-struct Event
-{
-  public:
-    double eventTime;
-    bool eventType;
-    Event *next;
-    Event *prev;
-};
-
-class GEL
-{
-    public:
-    Event *head;
-    Event *tail;
-    GEL();
-    ...
-};
-```
-
-The `GEL` data structure is implemented as a doubly linked list. The `GEL` data structure includes a pointer to the head and tail of the linked list for ease of access. The `Event` data structure is a node in the `GEL`. In the `Event` data structure, we include a double for the event time and a boolean that indicates the event type based on our macros (`ARRIVAL` & `DEPARTURE`).
-
-```c++
-struct Packet
-{
-  public:
-    double serviceTime;
-    Packet *next;
-};
-int main()
-{
-    queue<Packet*> queue;
-    ...
-}
-
-```
-
-The FIFO queue was implemented using the standard C++ library.  The queue is made up of `Packets`. A `Packet` has a structure analogous to a singly linked list and it contains a double that holds the service time for the specified packet.
-
 ## **IMPLEMENTATION DETAILS**
 
-### **Helper Functions**
+Similar to Project 1, we utilized the GEL as a timeline for events that can happen. We have 3 types of events: arrival, departure, and backoff.
 
-```c++
-class GEL
-{
-    public:
-    ...
-    GEL();
-    bool insertEvent(Event *newEvent);
-    Event *removeFirstEvent();
-    void printGEL();
-    bool isTransmittingPacket();
-};
+ Arrival and departure events push frames onto the host queue and pop frames off the host queue respectively. With a new arrival, we also generate a new arrival event for the gel. For departure event, we need to check if it is an acknowledge event or not. If it is an acknowledgement, the event it acknowledges is popped and if it has another frame in the queue, we create a new backoff for it. If it is not an acknowledgement, we have to create an acknowledgement frame at the host that's will receive the frame. (Note: In our code, we call frames packets, a remnant from Project 1.) Each time a frame departs, we increment `totalBytesTransmitted` by the size of the frame/acknowledgement. `totalBytesTransmitted` will be used to calculate the throughput. 
 
-void printQueue(queue<Packet*> q);
-double negativeExponentiallyDistributedTime(double rate);
+ Backoff events happen every 0.1 seconds. This event is utilized to decrement the backoff counters of all the hosts. The backoff event also handles creating a new backoff event for the next 0.1 second time increment. At each backoff event, we calculate the queue delay as well regardless whether or not the channel is busy.
 
-```
+## **Calculations**
 
-`GEL()` is the constructor for the GEL. It initializes the `head` and `tail` pointer to `NULL`.
+ `Throughput = bytes in frame / total time` 
 
-`insertEvent()` is a function that will take the `newEvent` and insert the event chronologically into the GEL. It returns `SUCCESS` upon successful insertion.
+Throughput is calculated by the number of bytes in a frame sent successfully (including the acknowledgement) divided by the total amount of time. 
 
-`removeFirstEvent()` is the function that removes the first event in the GEL and returns a pointer to the removed event.
+ `Average Network Delay = (queue delay + transmission delay) / throughput` 
 
-`printGEL()` is a function that will print out the GEL to the terminal. This function is used for debugging.
+The average network delay is the total delay (which is the queuing and transmission delay) divided by the throughput. 
 
-`isTransmittingPacket()` is a function that checks if the transmitter is busy transmitting another packet. We know the transmitter is busy if there is a departure event in the GEL.
+## **RESULTS**
 
-`printQueue()` is a function that will print out the queue to the terminal. This function is used for debugging.
+### Experiment 1: N = 10
 
-`negativeExponentiallyDistributedTime()` is a function given to us in the lab manual. This function is used to get the randomized distributed time based on `serviceRate` and `arrivalRate`.
+![](buffer=20.png)
 
-### **Main**
+### Experiment 2: N = 50
 
-The main logic was implemented akin to the logic given in the lab manual. We wrote a for loop to run each of the `arrivalRates` and we manually changed the `MAXBUFFER` for part 3 of the experiments.
+![](buffer=1.png)
 
-## **EXPERIMENTS**
+## **ANALYSIS**
 
-### Experiment 1
-
-![alt text][infiniteBuffer]
-
-[infiniteBuffer]:https://github.com/Armand42/ECS152A/blob/master/infinite%20buffer.png
-
-### Experiment 2 - Infinite Buffer
-
-![alt text][exp2meanQueueLength]
-
-![alt text][exp2utilization]
-
-[exp2meanQueueLength]:https://github.com/Armand42/ECS152A/blob/master/exp2-meanQueueLength.png
-
-[exp2utilization]:https://github.com/Armand42/ECS152A/blob/master/exp2-serverUtilization.png
-
-## Experiment 3
-
-![alt text][buffer=1]
-
-![alt text][buffer=20]
-
-![alt text][buffer=30]
-
-[buffer=1]:https://github.com/Armand42/ECS152A/blob/master/buffer%3D1.png
-
-[buffer=20]:https://github.com/Armand42/ECS152A/blob/master/buffer%3D20.png
-
-[buffer=30]:https://github.com/Armand42/ECS152A/blob/master/buffer%3D30.png
+For both experiments, we see a decrease in throughput when λ changes from 0.2 to 0.4. Our theory is that when λ is 0.4, the network starts experiencing backoffs and the throughput is no longer 100%. The graph increases afterwards because λ is higher meaning more frames arriving and a higher throughput.
